@@ -52,4 +52,7 @@ pip install shapely
 
 please down load the [train model](https://drive.google.com/drive/folders/1Cs4M6IC1g8I4HtM5DW9w-0GQS64BWv6l?usp=sharing), and save the model under the 'data' directory.
 
+## apply pushing methods
+
+please check the [`pushing`](pushing/README.md) to run the code.
 

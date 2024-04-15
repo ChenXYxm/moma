@@ -93,8 +93,8 @@ def get_x_y(tsdf,occupancy):
     current_time = rospy.Time.now().to_sec()
     current_time = np.round(current_time)
     current_time = int(current_time)
-    image_name = "./data/point_cloud/pushing_result/"+str(current_time)+".png"
-    cv2.imwrite(image_name,occu)
+    # image_name = "./data/point_cloud/pushing_result/"+str(current_time)+".png"
+    # cv2.imwrite(image_name,occu)
     '''
     for _ in range(len(value)):
             if float(value[_]) <=-0.1:

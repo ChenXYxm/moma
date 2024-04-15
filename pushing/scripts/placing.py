@@ -895,11 +895,11 @@ class DepthImageTransformerTalker:
         img_blur = cv2.filter2D(image,-1,kernel)
         img_blur=np.where(img_blur <100, 0, img_blur)
         img_blur=np.where(img_blur >=100, 255, img_blur)
-        cv2.imwrite(self.save_path+'occu_filtered_new.png',img_blur)
+        # cv2.imwrite(self.save_path+'occu_filtered_new.png',img_blur)
         current_time = rospy.Time.now().to_sec()
         current_time = np.round(current_time)
         current_time = int(current_time)
-        cv2.imwrite(self.save_path+'occu/'+str(current_time)+'.png',img_blur)
+        # cv2.imwrite(self.save_path+'occu/'+str(current_time)+'.png',img_blur)
         return img_blur
     def camera_info_callback(self,msg):
         self.camera_matrix = np.array(msg.K).reshape((3, 3))
@@ -1139,7 +1139,7 @@ class DepthImageTransformerTalker:
         heightmap_tmp = (heightmap_tmp-np.min(heightmap_tmp))/(np.max(heightmap_tmp)-np.min(heightmap_tmp))
         heightmap_tmp = heightmap_tmp*255
         # heightmap = heightmap.astype(np.uint8)
-        cv2.imwrite(self.save_path+'heightmap.png',heightmap_tmp)
+        # cv2.imwrite(self.save_path+'heightmap.png',heightmap_tmp)
         return heightmap
         
     def decode_image_pos(self):

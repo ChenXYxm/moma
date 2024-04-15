@@ -1,31 +1,33 @@
-# moma_utils
+# Apply pushing methods
 
-Utilities that can be shared among moma projects.
+## start the controllers
 
-* `ros_control.py`: Wrappers around various ROS control services.
-* `ros_conversions.py`: Various conversions to/from ROS messages.
-* `transform.py`: Rigid spatial transformations in Python.
-
-## Installation
-
-Install the requirements within an activated virtual environment.
+Run with moveit:
 
 ```
-pip install -r requirements.txt
+roslaunch moma_bringup panda_real.launch moveit:=true
 ```
 
-### Catkin
+run the sensor:
 
 ```
-catkin build moma_utils
+roslaunch moma_bringup sensors.launch wrist_camera:=true fixed_camera:=false
 ```
 
-### Python-only
+## apply pushing and placing methods:
 
-This package can also be installed as a stand-alone Python package.
-Note that importing some of the classes might fail due to missing ROS dependencies.
-
+run proposed placing method without pushing:
 ```
-cd /path/to/moma_utils
-pip install -e .
+rosun pushing placing.py
+```
+
+
+run the pushing baseline:
+```
+rosrun pushing pushing_compare.py
+```
+
+run the PPO with CNN pushing method:
+```
+rosrun pushing pushing_new.py
 ```
