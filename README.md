@@ -50,7 +50,7 @@ pip install shapely
 
 ## Download the PPO with CNN pushing model
 
-please down load the [train model](https://drive.google.com/drive/folders/1Cs4M6IC1g8I4HtM5DW9w-0GQS64BWv6l?usp=sharing), and save the model under the 'data' directory.
+please down load the [trained model](https://drive.google.com/drive/folders/1Cs4M6IC1g8I4HtM5DW9w-0GQS64BWv6l?usp=sharing), and save the model under the 'data' directory.
 
 ## apply pushing methods
 
