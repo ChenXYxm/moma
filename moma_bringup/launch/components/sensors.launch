@@ -21,9 +21,12 @@
     <arg name="camera" value="fixed_camera" />
     <arg name="depth_width" value="640" />
     <arg name="depth_height" value="480" />
-    <arg name="depth_fps" value="30" />
+    <arg name="color_width" value="640" />
+    <arg name="color_height" value="480" />
+    <arg name="depth_fps" value="6" />
+    <arg name="color_fps" value="6" />
     <arg name="enable_pointcloud" value="true" />
     <arg name="publish_tf" value="true" />
-    <arg name="serial_no" value="231522070510" />
+    <arg name="serial_no" value="838212070495" />
   </include>
 </launch>

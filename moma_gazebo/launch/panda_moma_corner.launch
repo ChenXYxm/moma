@@ -14,6 +14,7 @@
     <arg name="world" default="$(arg world_name)" />
     <arg name="controller" default="$(arg controller)" />
     <arg name="use_bota" default="$(arg use_bota)" />
+    <arg name="interactive_marker" default="false" /> 
   </include>
 
   <!-- Launch moveit as well. -->
