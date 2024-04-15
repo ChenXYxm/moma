@@ -321,7 +321,7 @@ def placing_compare_fun(occu_ori,mask):
                     # print(occu_tmp)
                     # plt.imshow(occu_tmp)
                     # plt.show()
-                    cv2.imwrite(image_name,mask_tmp*255/2)
+                    # cv2.imwrite(image_name,mask_tmp*255/2)
                     target_pos = [int(j+w_m_tmp/2),int(k+l_m_tmp/2),np.deg2rad(theta)]
                     return(flag_found,target_pos) 
                     break
@@ -528,7 +528,7 @@ def place_new_obj_fun(occu_ori,new_obj):
         current_time = rospy.Time.now().to_sec()
         current_time = np.round(current_time)
         current_time = int(current_time)
-        cv2.imwrite('./data/point_cloud/placing_result/'+str(current_time)+'.png',occu_tmp*255/3)
+        # cv2.imwrite('./data/point_cloud/placing_result/'+str(current_time)+'.png',occu_tmp*255/3)
 
         # occu_tmp[Ny-1,Nx-1] = 3
         # occu_tmp2 = occu_tmp.copy()

@@ -43,7 +43,7 @@ def get_x_y(tsdf,occupancy):
     obs[0,:,:,0] = occupancy.copy()
     obs[0,:,:,1] = tsdf.copy()
     # checkpoint = './data/model.zip'
-    checkpoint = './data/model/model2.zip'
+    checkpoint = './data/PPO_model.zip'
     agent = PPO.load(checkpoint)
     actions, _ = agent.predict(obs, deterministic=True)
     obs_tensor = torch.from_numpy(obs)

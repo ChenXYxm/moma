@@ -10,6 +10,7 @@ Main repository of the mobile manipulation (moma) team at ASL containing launch 
 - [`moma_utils`](moma_utils/README.md): Python utilities commonly used within moma projects.
 - `panda_control`: Wrappers and custom controllers for controlling panda.
 - `panda_moveit_config`: MoveIt configuration for our panda setup.
+- [`pushing`](pushing/README.md): apply the PPO with CNN pushing method and baseline method on the panda arm.
 
 ## Quick Start
 
@@ -18,7 +19,7 @@ Note that all instructions in this repository are tested on Ubuntu 18.04 with RO
 First, clone this repository and its submodules into the `src` folder of a new or existing catkin workspace.
 
 ```bash
-git clone --recurse-submodules git@github.com:ethz-asl/moma.git
+git clone --recurse-submodules git@github.com:ChenXYxm/moma_ws.git
 ```
 
 Install some general system dependencies.
@@ -39,31 +40,16 @@ Then, use catkin to build the desired packages, e.g.
 catkin build grasp_demo
 ```
 
-### GPD
-
-When building a package that relies on GPD (e.g. `fetch_demo` or `grasp_demo`), GPD needs to be built separately first. For the installation instructions, refer to `submodules/gpd/README.md`.
-
-### Wiki
-
-Before you start developing, familiarize yourself with the [robotic platform](https://github.com/ethz-asl/moma/wiki/Robots) you will be working with and make sure to checkout the [development](https://github.com/ethz-asl/moma/wiki/Development) section of our wiki.
-
-## Documentation
-
-Every package should contain a `README.md` file documenting its main features.
-
-More detailed instructions on the setup and operation of our robotic platforms, as well as some best-practices for development can be found in the [Wiki](https://github.com/ethz-asl/moma/wiki).
-
-## Ansible Playbooks
-
-The `operations/` directory contains some Ansible playbooks which are there to automate and document how to set up a computer.
-
-To run a playbook, first install Ansible (`pip install --user ansible`). Copy the hosts file `operations/hosts` to `/etc/ansible/hosts`.
-
-The hosts file is an inventory file specifying groups of hosts. A playbook is always run against a group and all the commands will be run on all machines in that group.
-
-To set up the franka control computer, run:
+Install additional python libraries:
 ```
-ansible-playbook operations/setup_franka.yaml --ask-pass --ask-become-pass
+pip install stable-baselines3
+pip install opencv-python
+pip install open3d
+pip install shapely
 ```
-The `--ask-pass` flag is not needed if ssh authentication is being used.
+
+## Download the PPO with CNN pushing model
+
+please down load the [train model](https://drive.google.com/drive/folders/1Cs4M6IC1g8I4HtM5DW9w-0GQS64BWv6l?usp=sharing), and save the model under the 'data' directory.
+
 
