@@ -176,6 +176,7 @@ catkin_install_python(PROGRAMS
    scripts/change_interactive_marker.py
    scripts/random_place_item.py
    scripts/placing.py
+   scripts/placing_baseline.py
    scripts/switch_controller.py
    scripts/pushing_new.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

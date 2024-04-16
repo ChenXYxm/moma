@@ -2,9 +2,6 @@
 from __future__ import print_function
 from six.moves import input
 import rospy
-from controller_manager_msgs.srv import SwitchController, SwitchControllerRequest
-from geometry_msgs.msg import PoseStamped
-from moma_utils.ros.panda import PandaGripperClient
 from sensor_msgs.msg import Image, CameraInfo
 from cv_bridge import CvBridge
 import tf
@@ -17,15 +14,113 @@ import moveit_commander
 import moveit_msgs.msg
 import geometry_msgs.msg
 import tf2_ros
+from moma_utils.ros.panda import PandaGripperClient
 import sys
+#from pushing.place_new_obj import place_new_obj_fun
 from shapely import Polygon, STRtree, area, contains, buffer, intersection,get_coordinates
 from pushing.place_new_obj import place_new_obj_fun,placing_compare_fun
 import pickle
-from std_msgs.msg import String
-from moveit_commander.conversions import pose_to_list
-import os
-######################################################################################
-######################################################################################
+
+#import matplotlib.pyplot as plt
+#import tkinter as tk
+#########################################################
+#########################################################
+
+def get_pos(new_obj,new_poly_vetices):
+    l1 = []
+    l2 = []
+    pos = [0,0,0]
+    obj_l1 = np.array(new_obj[1]) - np.array(new_obj[0])
+    obj_l2 = np.array(new_obj[3]) - np.array(new_obj[0])
+    sign_obj_p0 = np.sign(np.cross(obj_l1,obj_l2))
+    for i in range(2):
+        l1.append(np.linalg.norm(new_obj[i]-new_obj[i+1]))
+        l2.append(np.linalg.norm(new_poly_vetices[i]-new_poly_vetices[i+1]))
+    if l2[0] <1:
+        l2[0] = 1
+    if l2[1] < 1:
+        l2[1] = 1
+    if l1[1] < 1:
+        l1[1] = 1
+    if l1[0] < 1:
+        l1[0] = 1
+    # print(l1,l2)
+    if l1[0] >=l1[1]:
+        if l2[0]>=l2[1]:
+            
+            l_tmp = new_poly_vetices[1]-new_poly_vetices[0]
+            l_tmp_2 = new_poly_vetices[3]-new_poly_vetices[0]
+            sign_pos_p0 = np.sign(np.cross(l_tmp,l_tmp_2))
+            if sign_obj_p0 == sign_pos_p0:
+                angle = np.arctan2(l_tmp[1],l_tmp[0])
+                pos_tmp = new_poly_vetices[0] + abs(new_obj[0][0])*l_tmp/l2[0] + abs(new_obj[0][1])*l_tmp_2/l2[1]
+                pos[2] = angle
+                pos[0] = pos_tmp[1]
+                pos[1] = pos_tmp[0]
+            else:
+                angle = np.arctan2(-l_tmp[1],-l_tmp[0])
+                pos_tmp = new_poly_vetices[0] + abs(new_obj[2][0])*l_tmp/l2[0] + abs(new_obj[2][1])*l_tmp_2/l2[1]
+                pos[2] = angle
+                pos[0] = pos_tmp[1]
+                pos[1] = pos_tmp[0]
+        else:
+            l_tmp = new_poly_vetices[3]-new_poly_vetices[0]
+            l_tmp_2 = new_poly_vetices[1]-new_poly_vetices[0]
+            sign_pos_p0 = np.sign(np.cross(l_tmp,l_tmp_2))
+            
+            if sign_obj_p0 == sign_pos_p0:
+                angle = np.arctan2(-l_tmp[1],-l_tmp[0])
+                pos_tmp = new_poly_vetices[0] + abs(new_obj[1][0])*l_tmp/l2[1] + abs(new_obj[1][1])*l_tmp_2/l2[0]
+                pos[2] = angle
+                pos[0] = pos_tmp[1]
+                pos[1] = pos_tmp[0]
+            else:
+                angle = np.arctan2(l_tmp[1],l_tmp[0])
+                pos_tmp = new_poly_vetices[0] + abs(new_obj[3][0])*l_tmp/l2[1] + abs(new_obj[3][1])*l_tmp_2/l2[0]
+                pos[2] = angle
+                pos[0] = pos_tmp[1]
+                pos[1] = pos_tmp[0]
+    else:
+        if l2[0]<l2[1]:
+            l_tmp = new_poly_vetices[1]-new_poly_vetices[0]
+            l_tmp_2 = new_poly_vetices[3]-new_poly_vetices[0]
+            sign_pos_p0 = np.sign(np.cross(l_tmp,l_tmp_2))
+            if sign_obj_p0 == sign_pos_p0:
+                angle = np.arctan2(l_tmp[1],l_tmp[0])
+                pos_tmp = new_poly_vetices[0] + abs(new_obj[0][0])*l_tmp/l2[0] + abs(new_obj[0][1])*l_tmp_2/l2[1]
+                pos[2] = angle
+                pos[0] = pos_tmp[1]
+                pos[1] = pos_tmp[0]
+            else:
+                angle = np.arctan2(-l_tmp[1],-l_tmp[0])
+                pos_tmp = new_poly_vetices[0] + abs(new_obj[2][0])*l_tmp/l2[0] + abs(new_obj[2][1])*l_tmp_2/l2[1]
+                pos[2] = angle
+                pos[0] = pos_tmp[1]
+                pos[1] = pos_tmp[0]
+        else:
+            l_tmp = new_poly_vetices[3]-new_poly_vetices[0]
+            l_tmp_2 = new_poly_vetices[1]-new_poly_vetices[0]
+            sign_pos_p0 = np.sign(np.cross(l_tmp,l_tmp_2))
+            
+            if sign_obj_p0 == sign_pos_p0:
+                angle = np.arctan2(-l_tmp[1],-l_tmp[0])
+                pos_tmp = new_poly_vetices[0] + abs(new_obj[1][0])*l_tmp/l2[1] + abs(new_obj[1][1])*l_tmp_2/l2[0]
+                pos[2] = angle
+                pos[0] = pos_tmp[1]
+                pos[1] = pos_tmp[0]
+            else:
+                
+                angle = np.arctan2(l_tmp[1],l_tmp[0])
+                pos_tmp = new_poly_vetices[0] + abs(new_obj[3][0])*l_tmp/l2[1] + abs(new_obj[3][1])*l_tmp_2/l2[0]
+                pos[2] = angle
+                pos[0] = pos_tmp[1]
+                pos[1] = pos_tmp[0]
+
+    return pos
+
+
+##########################################################
+##########################################################
 try:
     from math import pi, tau, dist, fabs, cos
 except:  # For Python 2 compatibility
@@ -36,66 +131,17 @@ except:  # For Python 2 compatibility
     def dist(p, q):
         return sqrt(sum((p_i - q_i) ** 2.0 for p_i, q_i in zip(p, q)))
 
-######################################################################################
-######################## use the PPO model to get the predicted pushing action #######
+from std_msgs.msg import String
+from moveit_commander.conversions import pose_to_list
 
-##############################################################################
-################## switch the controller #####################################
-##################TODO: need to call this function every time when moveit or impedance control method is used ###########
-def switch_controller(start_controllers, stop_controllers):
-    rospy.wait_for_service('/controller_manager/switch_controller')
-    try:
-        switch_controller = rospy.ServiceProxy('/controller_manager/switch_controller', SwitchController)
-        response = switch_controller(start_controllers=start_controllers, stop_controllers=stop_controllers, strictness=SwitchControllerRequest.BEST_EFFORT)
-        if response.ok:
-            rospy.loginfo("Controllers switched successfully.")
-        else:
-            rospy.logwarn("Failed to switch controllers: {}".format(response.error_string))
-    except rospy.ServiceException as e:
-        rospy.logerr("Service call failed: {}".format(e))
-def switch_to_impedance():
-    controller_1 = ["cartesian_impedance_example_controller"]  # Specify the controllers to start
-    controller_2 = ["effort_joint_trajectory_controller"]     # Specify the controllers to stop
-    start_controller = controller_1
-    stop_controller = controller_2
-    switch_controller(start_controller, stop_controller)
-def switch_to_moveit():
-    controller_1 = ["cartesian_impedance_example_controller"]  # Specify the controllers to start
-    controller_2 = ["effort_joint_trajectory_controller"]     # Specify the controllers to stop
-    start_controller = controller_2
-    stop_controller = controller_1
-    switch_controller(start_controller, stop_controller)
-###############################################################################
-####################### impedance control method ##############################
-class PerformAction_Impedance(object):
-    def __init__(self):
-        super(PerformAction_Impedance, self).__init__()
-        
-        self.rate = rospy.Rate(10)  # 10Hz
-    def move(self,x = 0.3,y=0.0,z=0.65):
-        i = 0
-        self.pub = rospy.Publisher('/cartesian_impedance_example_controller/equilibrium_pose', PoseStamped, queue_size=10)
-        while i < 20:
-            pose_msg = PoseStamped()
-            pose_msg.header.stamp = rospy.Time.now()
-            pose_msg.header.frame_id = "panda_link0"  # frame ID for the pose
-            pose_msg.pose.position.x = x
-            pose_msg.pose.position.y = y
-            pose_msg.pose.position.z = z
-            pose_msg.pose.orientation.x = 1.0
-            pose_msg.pose.orientation.y = 0.0
-            pose_msg.pose.orientation.z =0.0
-            pose_msg.pose.orientation.w = 0.0
-            self.pub.publish(pose_msg)
-            i +=1
-            self.rate.sleep()
-#################################################################################
-################### moveit control method #######################################
-class PerformAction_Moveit(object):
+
+
+
+class PerformPushing(object):
     """MoveGroupPythonInterfaceTutorial"""
 
     def __init__(self):
-        super(PerformAction_Moveit, self).__init__()
+        super(PerformPushing, self).__init__()
 
 
         ## First initialize `moveit_commander`_ and a `rospy`_ node:
@@ -120,7 +166,14 @@ class PerformAction_Moveit(object):
         group_name = "panda_manipulator"
         move_group = moveit_commander.MoveGroupCommander(group_name)
 
-        
+        ## Create a `DisplayTrajectory`_ ROS publisher which is used to display
+        ## trajectories in Rviz:
+        display_trajectory_publisher = rospy.Publisher(
+            "/move_group/display_planned_path_pushing",
+            moveit_msgs.msg.DisplayTrajectory,
+            queue_size=20,
+        )
+
         
         planning_frame = move_group.get_planning_frame()
         #print("============ Planning frame: %s" % planning_frame)
@@ -142,7 +195,7 @@ class PerformAction_Moveit(object):
         self.robot = robot
         self.scene = scene
         self.move_group = move_group
-        
+        self.display_trajectory_publisher = display_trajectory_publisher
         self.planning_frame = planning_frame
         self.eef_link = eef_link
         self.group_names = group_names
@@ -165,14 +218,8 @@ class PerformAction_Moveit(object):
         pass
     def get_gripper_pose(self):
         current_pose = self.move_group.get_current_pose().pose
-        print('current pose')
-        print(current_pose)
-    def get_gripper_and_joint_pose(self):
-        current_pose = self.move_group.get_current_pose().pose
-        joint_angle = self.move_group.get_current_joint_values()
-        print('current pose:',current_pose)
-        print('current joint angles:', joint_angle)
-        return current_pose,joint_angle
+        # print('current pose')
+        # print(current_pose)
     def go_to_joint_state(self):
 
         move_group = self.move_group
@@ -239,66 +286,9 @@ class PerformAction_Moveit(object):
         current_pose = self.move_group.get_current_pose().pose
         #current_joints = move_group.get_current_joint_values()
         #print('current_joints: ',current_joints)
-    def move(self,x,y,z):
-        move_group = self.move_group
-        pose_goal = geometry_msgs.msg.Pose()
-        #helper_frame_pose.header.frame_id = "world"
-        pose_goal.orientation.w = 0.0
-        pose_goal.orientation.x = 1.0
-        pose_goal.orientation.y = 0.0
-        #pose_goal.orientation.z = 0.0
-        pose_goal.position.x = x
-        pose_goal.position.y = y
-        pose_goal.position.z = z
-        move_group.set_pose_target(pose_goal)
-        success = move_group.go(wait=True)
-        move_group.stop()
-        move_group.clear_pose_targets()
-        current_pose = self.move_group.get_current_pose().pose
-        if not all_close(pose_goal, current_pose, 0.05):
-            print('cannot find path to move the gripper above the target point')
-            # return all_close(pose_goal, current_pose, 0.05)
-    def go_to_pose_goal_without_pushing(self,x=0.5,y = 0.0,rotate=0):
-        move_group = self.move_group
-        pose_goal = geometry_msgs.msg.Pose()
-        pose_goal.orientation.w = 0.0
-        pose_goal.orientation.x = 1.0
-        pose_goal.orientation.y = 0.0
-        pose_goal.position.x = x
-        pose_goal.position.y = y
-        pose_goal.position.z = 0.27
-        move_group.set_pose_target(pose_goal)
-        success = move_group.go(wait=True)
-        move_group.stop()
-        print('success: ', success)
-        move_group.clear_pose_targets()
-        current_pose = self.move_group.get_current_pose().pose
-        if not all_close(pose_goal, current_pose, 0.05):
-            print('cannot find path to move the gripper above the target point')
-            #return all_close(pose_goal, current_pose, 0.05)
-        #########################################################################
-        ############################ rotate the gripper #########################
-        joint_goal = move_group.get_current_joint_values()
-        if rotate == 0 or rotate==2:
-            if joint_goal[6]< 1.2:
-                joint_goal[6]+=tau / 4
-            else:
-                joint_goal[6]-=tau / 4
-            move_group.go(joint_goal, wait=True)
-            move_group.stop()
-            current_joints = move_group.get_current_joint_values()
-            if not all_close(joint_goal, current_joints, 0.05):
-                print('ubable to rotate joint 6')
-                
-        ############################ go down ####################################
-        # pose_goal = self.move_group.get_current_pose().pose
-        # switch_to_impedance()
-        # if pose_goal.position.x <=0.28:
-
         
-        # return all_close(pose_goal, current_pose, 0.05)
     def go_to_pose_goal(self,x=0.5,y = 0.0,rotate=0):
-       	switch_to_moveit()
+       
         move_group = self.move_group
         #move_group.set_end_effector_link(self.true_eef)
         ####################################### move to point above target pose ###########################
@@ -312,7 +302,7 @@ class PerformAction_Moveit(object):
         #pose_goal.orientation.z = 0.0
         pose_goal.position.x = x
         pose_goal.position.y = y
-        pose_goal.position.z = 0.27
+        pose_goal.position.z = 0.3
         
         #gripper_frame = "/panda_hand_tcp"   # Update with camera frame
         #ee_frame = self.eef_link    # Update with world frame
@@ -328,12 +318,12 @@ class PerformAction_Moveit(object):
         current_pose = self.move_group.get_current_pose().pose
         if not all_close(pose_goal, current_pose, 0.05):
             print('cannot find path to move the gripper above the target point')
-            #return all_close(pose_goal, current_pose, 0.05)
+            return all_close(pose_goal, current_pose, 0.05)
         #########################################################################
         ############################ rotate the gripper #########################
         joint_goal = move_group.get_current_joint_values()
         if rotate == 0 or rotate==2:
-            if joint_goal[6]< 1.2:
+            if joint_goal[6]< 2:
                 joint_goal[6]+=tau / 4
             else:
                 joint_goal[6]-=tau / 4
@@ -369,7 +359,7 @@ class PerformAction_Moveit(object):
         ############################ go down ####################################
         pose_goal = self.move_group.get_current_pose().pose
         #helper_frame_pose.header.frame_id = "world"
-        pose_goal.position.z = 0.155
+        pose_goal.position.z = 0.15
         move_group.set_pose_target(pose_goal)
         success = move_group.go(wait=True)
         move_group.stop()
@@ -443,9 +433,28 @@ class PerformAction_Moveit(object):
         ##########################################################################
         return all_close(pose_goal, current_pose, 0.05)
     def place(self,x=0.5,y = 0.0,rotate=0,z=0.185):
-       
+        
+
+        ###########################################################
         move_group = self.move_group
         #move_group.set_end_effector_link(self.true_eef)
+        ####################################### create middle point
+        pose_goal = self.move_group.get_current_pose().pose
+        
+        pose_goal.position.x = pose_goal.position.x+(x-pose_goal.position.x)/2.
+        pose_goal.position.y = pose_goal.position.y+(y-pose_goal.position.y)/2.
+        pose_goal.position.z = 0.4
+        move_group.set_pose_target(pose_goal)
+        success = move_group.go(wait=True)
+        move_group.stop()
+        print('success: ', success)
+        
+        move_group.clear_pose_targets()
+        current_pose = self.move_group.get_current_pose().pose
+        if not all_close(pose_goal, current_pose, 0.05):
+            print('cannot find path to move the gripper to the middle point')
+            # return all_close(pose_goal, current_pose, 0.05)
+        # input( "============ complete middle point ...") 
         ####################################### move to point above target pose ###########################
         ## We can plan a motion for this group to a desired pose for the
         ## end-effector:
@@ -467,20 +476,17 @@ class PerformAction_Moveit(object):
         move_group.set_pose_target(pose_goal)
         success = move_group.go(wait=True)
         move_group.stop()
-        #print('success: ', success)
+        print('success: ', success)
         
         move_group.clear_pose_targets()
         current_pose = self.move_group.get_current_pose().pose
         if not all_close(pose_goal, current_pose, 0.05):
             print('cannot find path to move the gripper above the target point')
-            #return all_close(pose_goal, current_pose, 0.05)
+            return all_close(pose_goal, current_pose, 0.05)
+        # input( "============ complete move above target point ...") 
         #########################################################################
         ############################ rotate the gripper #########################
         joint_goal = move_group.get_current_joint_values()
-        while rotate>= tau/2:
-            rotate = rotate-tau/2
-        while rotate<=-tau/2:
-            rotate = rotate+tau/2
         if joint_goal[6]+rotate<2.8 and joint_goal[6]+rotate>-2.8:
             joint_goal[6] = joint_goal[6]+rotate
         else:
@@ -494,6 +500,7 @@ class PerformAction_Moveit(object):
         current_joints = move_group.get_current_joint_values()
         if not all_close(joint_goal, current_joints, 0.05):
             print('ubable to rotate joint 6')
+        # input( "============ complete rotation ...") 
         ############################ go down ####################################
         pose_goal = self.move_group.get_current_pose().pose
         #helper_frame_pose.header.frame_id = "world"
@@ -504,8 +511,9 @@ class PerformAction_Moveit(object):
         move_group.clear_pose_targets()
         current_pose = self.move_group.get_current_pose().pose
         joint_goal = move_group.get_current_joint_values()
-        if not all_close(pose_goal, current_pose, 0.02):
+        if not all_close(pose_goal, current_pose, 0.05):
             print('cannot find path to move the gripper to the target point: going down')
+        # input( "============ complete going down first step ...") 
         ############################ go down ####################################
         pose_goal = self.move_group.get_current_pose().pose
         pose_goal.position.z = z
@@ -515,9 +523,10 @@ class PerformAction_Moveit(object):
         move_group.clear_pose_targets()
         current_pose = self.move_group.get_current_pose().pose
         joint_goal = move_group.get_current_joint_values()
-        if not all_close(pose_goal, current_pose, 0.02):
+        if not all_close(pose_goal, current_pose, 0.05):
             print('cannot find path to move the gripper to the target point: going down')
-        return all_close(pose_goal, current_pose, 0.02)
+        # input( "============ complete going down last step ...")
+        return all_close(pose_goal, current_pose, 0.05)
     def move_up(self):
         move_group = self.move_group
         pose_goal = move_group.get_current_pose().pose
@@ -525,7 +534,7 @@ class PerformAction_Moveit(object):
         move_group.set_pose_target(pose_goal)
         success = move_group.go(wait=True)
         move_group.stop()
-        #print('success: ', success)
+        print('success: ', success)
         
         move_group.clear_pose_targets()
         current_pose = self.move_group.get_current_pose().pose
@@ -557,7 +566,7 @@ class PerformAction_Moveit(object):
         move_group.set_pose_target(pose_goal)
         success = move_group.go(wait=True)
         move_group.stop()
-        #print('success: ', success)
+        print('success: ', success)
         
         move_group.clear_pose_targets()
         current_pose = self.move_group.get_current_pose().pose
@@ -590,8 +599,6 @@ class PerformAction_Moveit(object):
         if not all_close(pose_goal, current_pose, 0.05):
             print('cannot find path to move the gripper to the target point: going down')
         return all_close(pose_goal, current_pose, 0.05)
-##################################################################################
-############## check reaching ####################################################
 def all_close(goal, actual, tolerance):
     """
     Convenience method for testing if the values in two lists are within a tolerance of each other.
@@ -620,24 +627,24 @@ def all_close(goal, actual, tolerance):
         return d <= tolerance and cos_phi_half >= cos(tolerance / 2.0)
 
     return True
-###################################################################################
-############################## Image processing ###################################
+
+
 class DepthImageTransformerTalker:
-    def __init__(self,model_path):
-        #rospy.init_node('pushing_obj', anonymous=True)
+    def __init__(self,placing_method='proposed'):
+        rospy.init_node('pushing_obj', anonymous=True)
         self.bridge = CvBridge()
         self.listener = tf.TransformListener()
         self.image_pub = rospy.Publisher('/transformed_depth_image', Image, queue_size=1)
         self.image_pub_occu = rospy.Publisher('/occu_image', Image, queue_size=1)
         self.occu_size = [50,50]
         self.save_path = './data/point_cloud/'
-        self.controller_moveit = PerformAction_Moveit()
+        self.puhsing_controller = PerformPushing()
         self.gripper = PandaGripperClient()
-        self.controller_impedance = PerformAction_Impedance()
+        self.placing_method = placing_method
         # Subscribe to the depth image topic
-        #self.puhsing_controller.go_to_obs_joint_state()
-        self.controller_moveit.go_to_get_new_obj_pose()
-        self.gripper.release(width=0.1)
+        # self.puhsing_controller.go_to_obs_joint_state()
+        self.puhsing_controller.go_to_get_new_obj_pose()
+        self.gripper.release(width=0.12)
         self.gripper.grasp(force=30.0)
         rospy.Subscriber('/wrist_camera/depth/camera_info', CameraInfo, self.camera_info_callback, queue_size=1)
         rospy.Subscriber('/wrist_camera/depth/image_rect_raw', Image, self.depth_image_callback, queue_size=1,buff_size=2**30) ##307200
@@ -645,11 +652,7 @@ class DepthImageTransformerTalker:
         self.time = 0.0
         self.flag_place = True
         self.pre_image = np.zeros([50,50]) 
-        self.place_obj_list = []
-        self.first_pushing_flag = False
-        self.num_obj_placed_by_push = 0
-        self.total_push_steps = 0
-        self.model_path = model_path
+        
         #rospy.spin()
     def quaternion_to_matrix(self,q):
         x, y, z,w  = q
@@ -659,71 +662,6 @@ class DepthImageTransformerTalker:
         [2*x*z - 2*w*y, 2*y*z + 2*w*x, 1 - 2*x**2 - 2*y**2]
         ])
         # return self.R
-    def get_x_y(self,tsdf,occupancy,model_path):
-        flag_get = True
-        obs = np.zeros([1,50,50,2])
-        obs[0,:,:,0] = occupancy.copy()
-        obs[0,:,:,1] = tsdf.copy()
-        # checkpoint = './data/model.zip'
-        checkpoint = model_path
-        agent = PPO.load(checkpoint)
-        actions, _ = agent.predict(obs, deterministic=True)
-        obs_tensor = torch.from_numpy(obs)
-        # print(obs_tensor.size())
-        obs_tensor = obs_tensor.permute(0,3,1,2)
-        # print(obs_tensor.size())
-        actions_tensor_tmp =  torch.from_numpy(actions)
-        value,log_prob,entropy = agent.policy.evaluate_actions(obs_tensor,actions_tensor_tmp)
-        # print('value log prob entropy')
-        # print(value,log_prob,entropy)
-        obs_tmp = obs.copy()
-        obs_tensor_tmp = obs_tensor.detach().clone()
-        act_app = np.zeros(len(obs))
-        #print(image_name)  
-        for j in range(3):
-            obs_tmp = np.rot90(obs_tmp,1,(2,1))
-            obs_tmp = obs_tmp.copy()
-            obs_tensor_tmp = obs_tensor_tmp.rot90(1,[3,2])
-            actions_tmp, _ = agent.predict(obs_tmp, deterministic=True)
-            actions_tensor_tmp =  torch.from_numpy(actions_tmp)
-            value_tmp,log_prob_tmp,entropy_tmp = agent.policy.evaluate_actions(obs_tensor_tmp,actions_tensor_tmp)
-            for i in range(len(obs_tensor)):
-                # if float(log_prob_tmp[i])>float(log_prob[i]):
-                if float(value_tmp[i]) > float(value[i]):
-                    actions[i] = actions_tmp[i]
-                    act_app[i] = j * 2.0 +2.0
-                    log_prob[i] = log_prob_tmp[i]
-                    value[i] = value_tmp[i]
-        actions_origin = actions.copy()
-        for _ in range(len(obs)):
-            if act_app[_] == 2:
-                actions[_,0] = 49-actions[_,1]
-                actions[_,1] = actions_origin[_,0]
-            elif act_app[_] == 4:
-                actions[_,0] = 49-actions[_,0]
-                actions[_,1] = 49-actions_origin[_,1]
-            elif act_app[_] == 6:
-                actions[_,0] = actions[_,1]
-                actions[_,1] = 49-actions_origin[_,0]
-        occu = occupancy.copy()
-        if occu[actions.flatten()[0],actions.flatten()[1]] >0:
-        flag_get = False
-        
-        # print('value: ', value)
-        occu = occu - 100
-        occu[actions.flatten()[0],actions.flatten()[1]] = 255
-        current_time = rospy.Time.now().to_sec()
-        current_time = np.round(current_time)
-        current_time = int(current_time)
-        # image_name = "./data/point_cloud/pushing_result/"+str(current_time)+".png"
-        # cv2.imwrite(image_name,occu)
-        '''
-        for _ in range(len(value)):
-                if float(value[_]) <=-0.1:
-                    act_app[_] = 10
-        '''
-        actions_new = np.c_[actions,act_app.T]   
-        return actions_new,flag_get
     def depth_pixel_to_camera_obs(self,cv_image):
         [height, width] = cv_image.shape
         
@@ -881,7 +819,7 @@ class DepthImageTransformerTalker:
         
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(points[:,:3])
-        #o3d.visualization.draw_geometries([pcd])
+        # o3d.visualization.draw_geometries([pcd])
         #o3d.io.write_point_cloud(self.save_path+"pcd_camera_frame.ply", pcd)
         return pcd
     def image_processing(self,image):
@@ -889,11 +827,11 @@ class DepthImageTransformerTalker:
         img_blur = cv2.filter2D(image,-1,kernel)
         img_blur=np.where(img_blur <100, 0, img_blur)
         img_blur=np.where(img_blur >=100, 255, img_blur)
-        #cv2.imwrite(self.save_path+'occu_filtered_new.png',img_blur)
+        # cv2.imwrite(self.save_path+'occu_filtered_new.png',img_blur)
         current_time = rospy.Time.now().to_sec()
         current_time = np.round(current_time)
         current_time = int(current_time)
-        #cv2.imwrite(self.save_path+'occu/'+str(current_time)+'.png',img_blur)
+        # cv2.imwrite(self.save_path+'occu/'+str(current_time)+'.png',img_blur)
         return img_blur
     def camera_info_callback(self,msg):
         self.camera_matrix = np.array(msg.K).reshape((3, 3))
@@ -974,7 +912,7 @@ class DepthImageTransformerTalker:
         pcd_obj = o3d.geometry.PointCloud()
         pcd_obj.points = o3d.utility.Vector3dVector(points_np)
         plane_model, inliers = pcd_obj.segment_plane(distance_threshold=0.015, ransac_n=3, num_iterations=1000)
-        
+        obj_outlier_cloud = pcd_obj.select_by_index(inliers)
   
         obj_inlier_cloud = pcd_obj.select_by_index(inliers, invert=True)
         #o3d.visualization.draw_geometries([obj_inlier_cloud])
@@ -1000,11 +938,11 @@ class DepthImageTransformerTalker:
         #o3d.visualization.draw_geometries([obj_inlier_cloud,aabb])
         obj_center = obj_inlier_cloud.get_center()
         aabb_center = aabb.get_center()
-        print('obj center',obj_center,aabb_center)
-        
+        print(obj_center,aabb_center)
+        print('length')
         length = aabb.get_extent()
-        print('length',length)
-        return aabb_center,length,height
+        print(length)
+        return aabb_center,length,height,pcd_obj,obj_inlier_cloud
     def pcd_to_tsdf(self):
         Nx, Ny = self.occu_size
         x = np.linspace(self.min_x, self.max_x, Nx)
@@ -1054,10 +992,58 @@ class DepthImageTransformerTalker:
         # f_save.close()
 
         return occupancy
+    def pcd_to_occu_obj(self,obj_pcd_w,obj_inlier_cloud):
+        obj_points = np.asarray(obj_pcd_w.points)
+        print('get new obj occu')
+        
+        pts = np.asarray(obj_inlier_cloud.points)
+        Nx = int(np.ceil((np.max(pts[:,0])-np.min(pts[:,0]))*100))
+        Ny = int(np.ceil((np.max(pts[:,1])-np.min(pts[:,1]))*100))
+        print(Nx,Ny)
+        # o3d.visualization.draw_geometries([obj_pcd_w])
+        # o3d.visualization.draw_geometries([obj_inlier_cloud])
+        self.max_x_obj = np.max(pts[:,0])
+        self.min_x_obj = np.min(pts[:,0])
+        self.max_y_obj = np.max(pts[:,1])
+        self.min_y_obj = np.min(pts[:,1])
+        u = (pts[:,0] - self.min_x_obj)/ ( self.max_x_obj-self.min_x_obj )
+        v = (pts[:,1] - self.min_y_obj)/ ( self.max_y_obj-self.min_y_obj )
+        u = (Nx-1)*u
+        v = (Ny-1)*v
+        occupancy = np.zeros( (Ny,Nx) )
+        u = np.round(u).astype(int)
+        v = np.round(v).astype(int)
+        u_ind = np.where(u<Nx)
+        u = u[u_ind]
+        v = v[u_ind]
+        v_ind = np.where(v<Ny)
+        u = u[v_ind]
+        v = v[v_ind]
+        u_ind = np.where(u>=0)
+        u = u[u_ind]
+        v = v[u_ind]
+        v_ind = np.where(v>=0)
+        u = u[v_ind]
+        v = v[v_ind]
+
+        occupancy[v,u] = 1
+        occupancy = occupancy
+        occupancy = np.fliplr(occupancy)
+        occupancy = np.rot90(occupancy)
+        length = max(Nx,Ny)
+        new_obj_occu = np.zeros((int(length/2+Nx+length/2),int(length/2+Ny+length/2)))
+        new_obj_occu[int(length/2):int(length/2)+Nx,int(length/2):int(length/2)+Ny] = occupancy
+        # cv2.imwrite(self.save_path+'new_occu.png',new_obj_occu*255)
+        # file_path = "./data/point_cloud/ex_occu.pkl"
+        # f_save = open(file_path,'wb')
+        # pickle.dump(occupancy,f_save)
+        # f_save.close()
+
+        return new_obj_occu
     def postprocessed_occu_to_tsdf(self,occu):
         Nx,Ny = self.occu_size
         occu_index = np.where(occu>=0.5)
-        #print('occu index',occu_index)
+        print('occu index',occu_index)
     def pcd_to_heightmap(self,pcd_w):
         xyz = np.asarray(pcd_w.points)
         
@@ -1085,7 +1071,7 @@ class DepthImageTransformerTalker:
         heightmap_tmp = (heightmap_tmp-np.min(heightmap_tmp))/(np.max(heightmap_tmp)-np.min(heightmap_tmp))
         heightmap_tmp = heightmap_tmp*255
         # heightmap = heightmap.astype(np.uint8)
-        #cv2.imwrite(self.save_path+'heightmap.png',heightmap_tmp)
+        # cv2.imwrite(self.save_path+'heightmap.png',heightmap_tmp)
         return heightmap
         
     def decode_image_pos(self):
@@ -1093,7 +1079,7 @@ class DepthImageTransformerTalker:
     def depth_image_callback(self, msg):
         msg_time = msg.header.stamp.to_sec()
         current_time = rospy.Time.now().to_sec()
-        #print("Delay is ", current_time - msg_time)
+        # print("Delay is ", current_time - msg_time)
         if current_time - msg_time < 2.0:
             try:
                 #self.debug_pub.publish(msg)
@@ -1108,7 +1094,7 @@ class DepthImageTransformerTalker:
                 print("Delay is ", current_time - msg_time,"current time is: ",current_time)
             
                 cv_image = self.bridge.imgmsg_to_cv2(msg, 'passthrough')
-                #print(cv_image.shape)
+                # print(cv_image.shape)
             
                 #plt.imshow(cv_image)
                 ''' debuging
@@ -1126,190 +1112,123 @@ class DepthImageTransformerTalker:
                 # get the rotation matrix
                 self.quaternion_to_matrix(self.quat)
                 if self.flag_place:
-                
+                    # self.puhsing_controller.go_to_get_new_obj_pose()
                     pcd_obj = self.depth_pixel_to_camera_obj(cv_image)
                     
                     
-                    self.new_obj_center, self.new_obj_length,self.height = self.get_center_new_obj(pcd_obj)
+                    self.new_obj_center, self.new_obj_length,self.height,pcd_obj_w,obj_inlier_cloud = self.get_center_new_obj(pcd_obj)
                     w_obj = int(np.ceil(self.new_obj_length[1]*100/2.0))
                     l_obj = int(np.ceil(self.new_obj_length[0]*100/2.0))
-                    print('new obj mask length: ',w_obj,l_obj,self.height)
-                    self.obj_vertices = np.zeros((4,2))
-                    self.obj_vertices[0,0] = -int(w_obj)
-                    self.obj_vertices[0,1] = -int(l_obj)
-                    self.obj_vertices[1,0] = int(w_obj)
-                    self.obj_vertices[1,1] = -int(l_obj)
-                    self.obj_vertices[2,0] = int(w_obj)
-                    self.obj_vertices[2,1] = int(l_obj)
-                    self.obj_vertices[3,0] = -int(w_obj)
-                    self.obj_vertices[3,1] = int(l_obj)
-                    if w_obj>2 or l_obj>2:
-                        self.controller_moveit.go_to_obs_joint_state()
-                        self.flag_place = False
-                    mask_length = int(max(4*w_obj,4*l_obj))
-                    self.new_obj_mask = np.zeros((mask_length,mask_length))
-                    self.new_obj_mask[int(mask_length/2)-l_obj:int(mask_length/2)+l_obj,int(mask_length/2)-w_obj:int(mask_length/2)+w_obj] = 1
-                    # print(self.new_obj_mask)
+                    # print('new obj mask length: ',w_obj,l_obj,self.height)
+                    if self.placing_method == 'proposed':
+                        current_time = rospy.Time.now().to_sec()
+                        # print('new obj mask length: ',w_obj,l_obj,self.height)
+                        self.obj_vertices = np.zeros((4,2))
+                        self.obj_vertices[0,0] = -int(w_obj)
+                        self.obj_vertices[0,1] = -int(l_obj)
+                        self.obj_vertices[1,0] = int(w_obj)
+                        self.obj_vertices[1,1] = -int(l_obj)
+                        self.obj_vertices[2,0] = int(w_obj)
+                        self.obj_vertices[2,1] = int(l_obj)
+                        self.obj_vertices[3,0] = -int(w_obj)
+                        self.obj_vertices[3,1] = int(l_obj)
+                        new_time = rospy.Time.now().to_sec()
+                        delta_time = new_time-current_time
+                        self.time += delta_time
+                        print('time',self.time)
+                        if w_obj>2 or l_obj>2:
+                            self.puhsing_controller.go_to_obs_joint_state()
+                            self.flag_place = False
+                        
+                    else:
+                        # print('new obj mask length: ',w_obj,l_obj,self.height)
+                        # print(2*w_obj,l_obj*2)
+                        current_time = rospy.Time.now().to_sec()
+                        # self.new_obj_mask = self.pcd_to_occu_obj(pcd_obj_w,obj_inlier_cloud)
+                        length_mask = np.max((l_obj*2,w_obj*2))
+                        # print('length mask',length_mask)
+                        self.new_obj_mask = np.zeros((int(2*length_mask)+14,int(2*length_mask)+14))
+                        self.new_obj_mask[length_mask-l_obj+7:length_mask+l_obj+7,length_mask-w_obj+7:length_mask+w_obj+7] = 1
+                        new_time = rospy.Time.now().to_sec()
+                        delta_time = new_time-current_time
+                        print('delta time',delta_time)
+                        self.time += delta_time
+                        print('time',self.time)
+                        if w_obj>2 or l_obj>2:
+                            self.puhsing_controller.go_to_obs_joint_state()
+                            self.flag_place = False
                 # Transform camera coordinates to world coordinates using tf
                 else:
                     pcd,points = self.depth_pixel_to_camera_obs(cv_image)
                     world_points = points[:,:3].copy()
                     pcd_w = self.camera_to_world(world_points)
                     occu = self.pcd_to_occu()
-                    # occu = self.image_processing(occu)
+                    occu = self.image_processing(occu)
                     occu_tmp = occu.copy()
                     occu = occu.astype(np.uint8)
                     self.occu = occu.copy()
                     tsdf = self.pcd_to_tsdf()
                     tsdf_tmp = tsdf.copy()
                     tsdf = tsdf.astype(np.uint8)
-                    #cv2.imwrite(self.save_path+'occu_new.png',occu)
-                    #cv2.imwrite(self.save_path+'tsdf_new.png',tsdf)
+                    # cv2.imwrite(self.save_path+'occu_new.png',occu)
+                    # cv2.imwrite(self.save_path+'tsdf_new.png',tsdf)
                     occu = occu/255
-                    pre_image = self.pre_image + occu
-                    pre_image = pre_image*255/float(np.max(pre_image))
-                    pre_image = pre_image.astype(np.uint8)
-                    #cv2.imwrite(self.save_path+'difference.png',pre_image)
-                    flag_found, new_poly_vetices,_,new_obj_pos = place_new_obj_fun(occu,self.obj_vertices)
-                    # flag_found, new_obj_pos = placing_compare_fun(occu,self.new_obj_mask)
+                    # pre_image = self.pre_image + occu
+                    # pre_image = pre_image*255/float(np.max(pre_image))
+                    # pre_image = pre_image.astype(np.uint8)
+                    # cv2.imwrite(self.save_path+'difference.png',pre_image)
+                    if self.placing_method == 'proposed':
+                        current_time = rospy.Time.now().to_sec()
+                        flag_found, new_poly_vetices,_,new_obj_pos = place_new_obj_fun(occu,self.obj_vertices)
+                        new_time = rospy.Time.now().to_sec()
+                        delta_time = new_time-current_time
+                        self.time += delta_time
                     # if _ is not None:
                     # 	self.pre_image = _.copy()
-                    #print('pre max', np.max(self.pre_image))
+                    else:
+                        current_time = rospy.Time.now().to_sec()
+                        flag_found,new_obj_pos=placing_compare_fun(occu,self.new_obj_mask)
+                        new_time = rospy.Time.now().to_sec()
+                        delta_time = new_time-current_time
+                        self.time += delta_time
+                    # print('pre max', np.max(self.pre_image))
                     if flag_found:
-                        
-                        print('place succeed,new item pos',new_obj_pos)
-                        #print('vertices: ', new_poly_vetices)
+                        # print('place succeed')
+                        # print(new_obj_pos)
+                        # print('vertices: ', new_poly_vetices)
                         #heightmap = self.pcd_to_heightmap(pcd_w)
                         #height = np.mean(heightmap[int(np.min(new_poly_vetices[:,0])):int(np.max(new_poly_vetices[:,0])),int(np.min(new_poly_vetices[:,1])):int(np.max(new_poly_vetices[:,1]))])
                         #print(height)
-                        if self.first_pushing_flag:
-                            self.num_obj_placed_by_push +=1
-                            print('pushing steps and num of obj placed by push',self.total_push_steps,self.num_obj_placed_by_push)
-                        self.place_obj_list.append(new_obj_pos)
-                        if self.height < 0.164:
-                            print('height too low: ', self.height)
-                            self.height = 0.164
-                        self.gripper.release(width=0.12)
-                        self.controller_moveit.grasp(x=self.new_obj_center[0]+0.01,y=self.new_obj_center[1],z=self.height-0.03)
+                        self.puhsing_controller.go_to_get_new_obj_pose()
+                        if self.height < 0.16:
+                            print('height to low: ', self.height)
+                            self.height = 0.16
+                        self.gripper.release(width=0.15)
+                        self.puhsing_controller.grasp(x=self.new_obj_center[0]+0.01,y=self.new_obj_center[1],z=self.height-0.03)
                         self.gripper.grasp(force=40.0)
                         x,y,rot = new_obj_pos
                         if rot <-tau/2:
-                           rot = rot + tau/2
+                           rot = rot + tau
                         elif rot >tau/2:
-                           rot = rot -tau/2
-                        print('place succeed,new item pos',new_obj_pos)
+                           rot = rot -tau
                         action = [x,y,2]
                         action = np.array(action)
                         x,y,_=self.transfrom_action_world(action)
-                        #input( "============ Press `Enter` to continue ...") 
-                        self.controller_moveit.move_up()
-                        flag_place=self.controller_moveit.place(x=x+0.01,y=y,rotate=rot,z=self.height-0.03)
-                        #input( "============ Press `Enter` to continue ...") 
-                        while True:
-                            if flag_place:
-                                self.gripper.release(width=0.12)
-                                break
-                            else:
-                                print('do not reach placing position')
-                                self.controller_moveit.move(x=x+0.01,y=y,z=self.height-0.028)
-                                self.gripper.release(width=0.12)
-                                break
-                        self.gripper.release(width=0.12)
-                        # self.gripper.release(width=0.15)
-                        self.controller_moveit.move_up()
-                        self.controller_moveit.go_to_get_new_obj_pose()
-                        self.gripper.grasp()
+                        # input( "============ Press `Enter` to continue ...") 
+                        self.puhsing_controller.move_up()
+                        self.puhsing_controller.place(x=x+0.01,y=y,rotate=rot,z=self.height-0.03)
+                        # input( "============ Press `Enter` to continue ...") 
+                        self.gripper.release(width=0.15)
+                        self.puhsing_controller.move_up()
+                        self.puhsing_controller.go_to_get_new_obj_pose()
+                        self.gripper.grasp(force=30.0)
                         self.flag_place = True
+                        print('total time',self.time)
                     else:
-                        self.total_push_steps +=1
-                        if not self.first_pushing_flag:
-                            file_list = os.listdir("./data/validation_results/real_robot/pushing_compare/")
-                            idx = len(file_list)
-                            file_name = 'obj_pos'+str(idx)+'.pkl'
-                            file_path = "./data/validation_results/real_robot/pushing_compare/"+file_name
-                            f_save = open(file_path,'wb')
-                            pickle.dump(self.place_obj_list,f_save)
-                            f_save.close()
-                        self.place_obj_list = []
-                        self.first_pushing_flag = True
-                        action,flag_get=self.get_x_y(tsdf_tmp,occu_tmp,self.model_path)
-	            
-                        print('push action: ',action)
-                        x,y,rot=self.transfrom_action_world(action)
-                        x = x+0.01
-                        if x >0.77:
-                            x = 0.77
-                        elif x <0.27:
-                            x = 0.27
-                        if y > 0.25:
-                            y = 0.25
-                        elif y < -0.25:
-                            y = -0.25
+                        print('total time',self.time)
 
-                        #input( "============ Press `Enter` to continue ...") 
-                        if x>=0.32 and x <=0.76:
-                            self.controller_moveit.go_to_pose_goal(x=x,y = y,rotate=rot)
-                        elif x >0.76 and abs(y)<0.22:
-                            self.controller_moveit.go_to_pose_goal(x=x,y = y,rotate=rot)
-                        else:
-                            if x > 0.76:
-                                action1.move(x=0.76,y=y,z=0.20)
-                                # action1.get_gripper_pose()
-                                switch_to_impedance()
-                                
-                                action2.move(x=x+0.01,y=y,z=0.2)
-                                # switch_to_moveit()
-                                # action1.get_gripper_and_joint_pose()
-                                # switch_to_impedance()
-                                action2.move(x=x+0.01,y=y,z=0.14)
-                                # switch_to_moveit()
-                                # action1.get_gripper_and_joint_pose()
-                                # switch_to_impedance()
-                                if rot == 1:
-                                    action2.move(x=x+0.035,y=y,z=0.14)
-                                    action2.move(x=x+0.07,y=y,z=0.14)
-                                elif rot == 3:
-                                    action2.move(x=x-0.035,y=y,z=0.14)
-                                    action2.move(x=x-0.07,y=y,z=0.14)
-                                elif rot == 0:
-                                    action2.move(x=x,y=y-0.035,z=0.14)
-                                    action2.move(x=x,y=y-0.07,z=0.14)
-                                elif rot == 2:
-                                    action2.move(x=x,y=y+0.035,z=0.14)
-                                    action2.move(x=x,y=y+0.07,z=0.14)
-                                
-                                # switch_to_moveit()
-                                # action1.get_gripper_and_joint_pose()
-                                # switch_to_impedance()
-                                action2.move(x=x-0.05,y=y,z=0.2)
-                                switch_to_moveit()
-                            elif x<0.32:
-                                action1.move(x=x,y=y,z=0.3)
-                                switch_to_impedance()
-                                z = 0.133
-                                if y <= 0.1 and y >=-0.1 and x <=0.28:
-                                    x = 0.286
-                                    z = 0.132
-                                
-                                action2.move(x=x,y=y,z=0.25)
-                                action2.move(x=x,y=y,z=0.19)
-                                action2.move(x=x,y=y,z=z)
-                                if rot == 1:
-                                    action2.move(x=x+0.035,y=y,z=z)
-                                    action2.move(x=x+0.07,y=y,z=z)
-                                elif rot == 3:
-                                    action2.move(x=x-0.035,y=y,z=z)
-                                    action2.move(x=x-0.07,y=y,z=z)
-                                elif rot == 0:
-                                    action2.move(x=x,y=y-0.035,z=z)
-                                    action2.move(x=x,y=y-0.07,z=z)
-                                elif rot == 2:
-                                    action2.move(x=x,y=y+0.035,z=z)
-                                    action2.move(x=x,y=y+0.07,z=z)
-                                switch_to_moveit()
-                        #rospy.sleep(3)
-    
-                        self.controller_moveit.go_to_obs_joint_state()
+                    
+                    
                 
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 print("error")
@@ -1318,7 +1237,7 @@ class DepthImageTransformerTalker:
         Nx, Ny = self.occu_size
         x,y,rot = action.flatten()
         rot = rot/2
-        #print(x,y,rot)
+        print(x,y,rot)
         x = self.min_x+(x-0.5)*(self.max_x-self.min_x)/float(Nx) 
         y = self.min_y+(y-0.5)*(self.max_y-self.min_y)/float(Ny) 
         #print(self.max_x,self.min_x,self.max_y,self.min_y,Nx)
@@ -1327,36 +1246,14 @@ class DepthImageTransformerTalker:
         return x,y,rot
     def get_occu(self):
         return self.occu
-###################################################################################
-##################### Main function ###############################################
-
-
 if __name__ == '__main__':
-    rospy.init_node('pushing_obj', anonymous=True)
-    '''
-    controller_1 = ["cartesian_impedance_example_controller"]  # Specify the controllers to start
-    controller_2 = ["effort_joint_trajectory_controller"]     # Specify the controllers to stop
-    idx = 0
-    '''
-    if len(sys.argv) < 2:
-        rospy.logerr("Please provide the model_path argument,(relative path to the downloaded model)")
-        return
-    
-    model_path = sys.argv[1]
-    rospy.loginfo("Model path: %s", model_path)
-    switch_to_moveit()
-    action1 = PerformAction_Moveit()
-    action1.go_to_obs_joint_state()
-    action2 = PerformAction_Impedance()
-    ##### if x <=0.28, -0.1<=y<=0.1 ==>> x = 0.29
-    ##### unreachable x == 0.77 y>=0.22 or y <= -0.22 z==0.2
     try:
-        depth_image_transformer_talker = DepthImageTransformerTalker(model_path='./data/PPO_model.zip')
+        depth_image_transformer_talker = DepthImageTransformerTalker(placing_method='other') ##proposed / other
         rospy.spin()
         occu = depth_image_transformer_talker.get_occu()
-        print('max occu')
-        print(np.max(occu))
+        # print('max occu')
+        # print(np.max(occu))
         
     except rospy.ROSInterruptException:
         pass
-    
+

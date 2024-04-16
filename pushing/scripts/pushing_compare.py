@@ -37,71 +37,71 @@ except:  # For Python 2 compatibility
         return sqrt(sum((p_i - q_i) ** 2.0 for p_i, q_i in zip(p, q)))
 ######################################################################################
 ######################## use the PPO model to get the predicted pushing action #######
-def get_x_y(tsdf,occupancy):
-    flag_get = True
-    obs = np.zeros([1,50,50,2])
-    obs[0,:,:,0] = occupancy.copy()
-    obs[0,:,:,1] = tsdf.copy()
-    # checkpoint = './data/model.zip'
-    checkpoint = './data/PPO_model.zip'
-    agent = PPO.load(checkpoint)
-    actions, _ = agent.predict(obs, deterministic=True)
-    obs_tensor = torch.from_numpy(obs)
-    # print(obs_tensor.size())
-    obs_tensor = obs_tensor.permute(0,3,1,2)
-    # print(obs_tensor.size())
-    actions_tensor_tmp =  torch.from_numpy(actions)
-    value,log_prob,entropy = agent.policy.evaluate_actions(obs_tensor,actions_tensor_tmp)
-    # print('value log prob entropy')
-    # print(value,log_prob,entropy)
-    obs_tmp = obs.copy()
-    obs_tensor_tmp = obs_tensor.detach().clone()
-    act_app = np.zeros(len(obs))
-    #print(image_name)  
-    for j in range(3):
-        obs_tmp = np.rot90(obs_tmp,1,(2,1))
-        obs_tmp = obs_tmp.copy()
-        obs_tensor_tmp = obs_tensor_tmp.rot90(1,[3,2])
-        actions_tmp, _ = agent.predict(obs_tmp, deterministic=True)
-        actions_tensor_tmp =  torch.from_numpy(actions_tmp)
-        value_tmp,log_prob_tmp,entropy_tmp = agent.policy.evaluate_actions(obs_tensor_tmp,actions_tensor_tmp)
-        for i in range(len(obs_tensor)):
-            # if float(log_prob_tmp[i])>float(log_prob[i]):
-            if float(value_tmp[i]) > float(value[i]):
-                actions[i] = actions_tmp[i]
-                act_app[i] = j * 2.0 +2.0
-                log_prob[i] = log_prob_tmp[i]
-                value[i] = value_tmp[i]
-    actions_origin = actions.copy()
-    for _ in range(len(obs)):
-        if act_app[_] == 2:
-            actions[_,0] = 49-actions[_,1]
-            actions[_,1] = actions_origin[_,0]
-        elif act_app[_] == 4:
-            actions[_,0] = 49-actions[_,0]
-            actions[_,1] = 49-actions_origin[_,1]
-        elif act_app[_] == 6:
-            actions[_,0] = actions[_,1]
-            actions[_,1] = 49-actions_origin[_,0]
-    occu = occupancy.copy()
-    if occu[actions.flatten()[0],actions.flatten()[1]] >0:
-       flag_get = False
+# def get_x_y(tsdf,occupancy):
+#     flag_get = True
+#     obs = np.zeros([1,50,50,2])
+#     obs[0,:,:,0] = occupancy.copy()
+#     obs[0,:,:,1] = tsdf.copy()
+#     # checkpoint = './data/model.zip'
+#     checkpoint = './data/PPO_model.zip'
+#     agent = PPO.load(checkpoint)
+#     actions, _ = agent.predict(obs, deterministic=True)
+#     obs_tensor = torch.from_numpy(obs)
+#     # print(obs_tensor.size())
+#     obs_tensor = obs_tensor.permute(0,3,1,2)
+#     # print(obs_tensor.size())
+#     actions_tensor_tmp =  torch.from_numpy(actions)
+#     value,log_prob,entropy = agent.policy.evaluate_actions(obs_tensor,actions_tensor_tmp)
+#     # print('value log prob entropy')
+#     # print(value,log_prob,entropy)
+#     obs_tmp = obs.copy()
+#     obs_tensor_tmp = obs_tensor.detach().clone()
+#     act_app = np.zeros(len(obs))
+#     #print(image_name)  
+#     for j in range(3):
+#         obs_tmp = np.rot90(obs_tmp,1,(2,1))
+#         obs_tmp = obs_tmp.copy()
+#         obs_tensor_tmp = obs_tensor_tmp.rot90(1,[3,2])
+#         actions_tmp, _ = agent.predict(obs_tmp, deterministic=True)
+#         actions_tensor_tmp =  torch.from_numpy(actions_tmp)
+#         value_tmp,log_prob_tmp,entropy_tmp = agent.policy.evaluate_actions(obs_tensor_tmp,actions_tensor_tmp)
+#         for i in range(len(obs_tensor)):
+#             # if float(log_prob_tmp[i])>float(log_prob[i]):
+#             if float(value_tmp[i]) > float(value[i]):
+#                 actions[i] = actions_tmp[i]
+#                 act_app[i] = j * 2.0 +2.0
+#                 log_prob[i] = log_prob_tmp[i]
+#                 value[i] = value_tmp[i]
+#     actions_origin = actions.copy()
+#     for _ in range(len(obs)):
+#         if act_app[_] == 2:
+#             actions[_,0] = 49-actions[_,1]
+#             actions[_,1] = actions_origin[_,0]
+#         elif act_app[_] == 4:
+#             actions[_,0] = 49-actions[_,0]
+#             actions[_,1] = 49-actions_origin[_,1]
+#         elif act_app[_] == 6:
+#             actions[_,0] = actions[_,1]
+#             actions[_,1] = 49-actions_origin[_,0]
+#     occu = occupancy.copy()
+#     if occu[actions.flatten()[0],actions.flatten()[1]] >0:
+#        flag_get = False
     
-    print('value: ', value)
-    occu = occu - 100
-    occu[actions.flatten()[0],actions.flatten()[1]] = 255
-    current_time = rospy.Time.now().to_sec()
-    current_time = np.round(current_time)
-    current_time = int(current_time)
-    # image_name = "./data/point_cloud/pushing_result/"+str(current_time)+".png"
-    # cv2.imwrite(image_name,occu)
-    '''
-    for _ in range(len(value)):
-            if float(value[_]) <=-0.1:
-                act_app[_] = 10
-    '''
-    actions_new = np.c_[actions,act_app.T]   
-    return actions_new,flag_get
+#     print('value: ', value)
+#     occu = occu - 100
+#     occu[actions.flatten()[0],actions.flatten()[1]] = 255
+#     current_time = rospy.Time.now().to_sec()
+#     current_time = np.round(current_time)
+#     current_time = int(current_time)
+#     # image_name = "./data/point_cloud/pushing_result/"+str(current_time)+".png"
+#     # cv2.imwrite(image_name,occu)
+#     '''
+#     for _ in range(len(value)):
+#             if float(value[_]) <=-0.1:
+#                 act_app[_] = 10
+#     '''
+#     actions_new = np.c_[actions,act_app.T]   
+#     return actions_new,flag_get
 ##############################################################################
 ################## switch the controller #####################################
 ##################TODO: need to call this function every time when moveit or impedance control method is used ###########

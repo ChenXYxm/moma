@@ -5,7 +5,7 @@
   <arg name="publish_world_link" default="true" />
   <arg name="moveit" default="true" />
   <arg name="arm_id" default="panda" />
-  <arg name="controller" default="effort_joint_trajectory_controller cartesian_impedance_example_controller" />
+  <arg name="controller" default="effort_joint_trajectory_controller" />
   <arg name="table" default="true" />
   <arg name="use_bota" default="false" />
  
@@ -27,8 +27,9 @@
     subst_value="true" />
 
   <!-- Start required controller -->
-  <!-- <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
-    output="screen" args="$(arg controller)" /> -->
+  <node name="controller_spawner1" pkg="controller_manager" type="spawner" respawn="false"
+    output="screen" args="cartesian_impedance_example_controller" /> 
+    
   <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
     output="screen" args="effort_joint_trajectory_controller" />
 

@@ -180,7 +180,7 @@ def main():
     new_policy_state_dict["value_net.weight"].copy_(state_dict["value_net.weight"])
     new_policy_state_dict["value_net.bias"].copy_(state_dict["value_net.bias"])
     dummy_model.policy.load_state_dict(new_policy_state_dict)
-    dummy_model.save("./data/model/model2")
+    dummy_model.save("./data/model/PPO_model")
     for name, param in dummy_model.policy.named_parameters():
         print(name)
         print(param)
