@@ -1,6 +1,8 @@
 # MoMa
 
-Main repository of the mobile manipulation (moma) team at ASL containing launch files, robot descriptions, utilities, controllers, and documentation for robot operation.
+This repository is created based on [the main repository](https://github.com/ethz-asl/moma) of the mobile manipulation (moma) team at ASL containing launch files, robot descriptions, utilities, controllers, and documentation for robot operation.
+
+This repository is primarily used to apply a proposed pushing policy to a robotic arm.
 
 ## Packages
 
@@ -19,26 +21,29 @@ Note that all instructions in this repository are tested on Ubuntu 18.04 with RO
 First, clone this repository and its submodules into the `src` folder of a new or existing catkin workspace.
 
 ```bash
+mkdir -p ~/moma_ws/src
+cd ~/moma_ws/src
 git clone --recurse-submodules git@github.com:ChenXYxm/moma_ws.git
 ```
 
-Install some general system dependencies.
-
+Start up the docker
 ```bash
-./install_dependencies.sh
+cd ~/moma_ws/src/moma/docker/
+./run_docker.sh -b dev.Dockerfile
 ```
 
-Set the build type to `release` for faster execution.
+Set up and build the workspace
 
 ```bash
-catkin config -DCMAKE_BUILD_TYPE=Release
+cd ~/moma_ws
+catkin init
+catkin config --extend /root/moma_dep_ws/devel
+catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release
+catkin build --continue
+
+source ~/.bashrc 
 ```
 
-Then, use catkin to build the desired packages, e.g.
-
-```bash
-catkin build grasp_demo
-```
 
 Install additional python libraries:
 ```
